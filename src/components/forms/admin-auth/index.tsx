@@ -1,8 +1,7 @@
 "use client";
 import React, { useState } from "react";
-
+import { signIn } from "next-auth/react";
 import { AuthAdminSchema, authAdminSchema } from "@/models/auth-admin.model";
-import { authAdminAction } from "@/actions/auth-admin";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -28,16 +27,25 @@ export default function AdminAuthForm() {
   const onSubmit = async (data: AuthAdminSchema) => {
     setIsLoading(true);
     try {
-      const res = await authAdminAction(data);
-      if (res.error) {
-        toast.error(res.error, {
+      const result = await signIn("credentials", {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        toast.error("Credenciais inválidas", {
           description: "Verifique suas credenciais e tente novamente.",
         });
-      } else {
+      } else if (result?.ok) {
+        toast.success("Login realizado com sucesso!");
         router.push("/booking");
       }
     } catch (error) {
       console.error("Login failed:", error);
+      toast.error("Erro interno", {
+        description: "Tente novamente mais tarde.",
+      });
     } finally {
       setIsLoading(false);
     }

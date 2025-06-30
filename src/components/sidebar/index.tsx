@@ -1,10 +1,11 @@
-"use server";
+"use client";
+
 import { UserModel } from "@/models/user.model";
-import { getUserFromCookie } from "@/utils/getUserFromCoockie";
+import { useUser } from "@/hooks/useUser";
 import { Wind, CalendarDays, ListChecks, User, Users } from "lucide-react";
-import { headers } from "next/headers";
+import { usePathname, useRouter } from "next/navigation";
 import React, { ReactNode } from "react";
-import { redirect } from "next/navigation";
+import { LogoutButton } from "@/components/auth/logout-button";
 
 interface SidebarProps {
   children: ReactNode;
@@ -17,12 +18,10 @@ interface MenuItem {
   visible: boolean;
 }
 
-export default async function Sidebar({ children }: SidebarProps) {
-  const user = await getUserFromCookie();
-
-  // Obter o pathname atual a partir dos headers
-  const headersList = await headers();
-  const pathname = headersList.get("x-pathname") || "";
+export default function Sidebar({ children }: SidebarProps) {
+  const { user, isLoading, isAuthenticated } = useUser();
+  const pathname = usePathname();
+  const router = useRouter();
 
   const buildMenuItems = (user: UserModel): MenuItem[] => {
     const baseItems = [
@@ -55,16 +54,23 @@ export default async function Sidebar({ children }: SidebarProps) {
     return baseItems.filter((item) => item.visible);
   };
 
-  if (!user) {
-    redirect("/login");
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div>Carregando...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
     return null;
   }
 
   const visibleItems = buildMenuItems(user);
 
-  const goTo = (href: string) => {
+  const handleNavigation = (href: string) => {
     if (pathname !== href) {
-      redirect(href);
+      router.push(href);
     }
   };
 
@@ -76,13 +82,15 @@ export default async function Sidebar({ children }: SidebarProps) {
             <Wind size={48} />
           </div>
         </div>
-        <div>
+
+        <div className="flex-1">
           <ul className="flex flex-col gap-2 p-4">
             {visibleItems.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <li
                   key={item.label}
+                  onClick={() => handleNavigation(item.href)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-md cursor-pointer ${
                     isActive ? "bg-black text-white" : "hover:bg-gray-50"
                   }`}
@@ -94,7 +102,20 @@ export default async function Sidebar({ children }: SidebarProps) {
             })}
           </ul>
         </div>
+
+        {/* User info and logout at bottom */}
+        <div className="border-t border-[#D7D7D7] p-4">
+          <div className="mb-3">
+            <p className="text-sm font-medium">
+              {user.name} {user.lastName}
+            </p>
+            <p className="text-xs text-gray-500">{user.email}</p>
+            <p className="text-xs text-blue-600 capitalize">{user.role}</p>
+          </div>
+          <LogoutButton className="w-full text-sm" />
+        </div>
       </div>
+
       <div className="flex-1 overflow-y-auto p-4 h-full bg-white">
         {children}
       </div>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import React from "react";
 import { Geist, Geist_Mono, Montserrat } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/components/providers/auth-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -35,8 +36,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable} font-sans antialiased bg-[#F6F4F1] text-foreground tracking-tight leading-normal min-h-screen flex flex-col items-center justify-center select-none text-sm sm:text-base `}
       >
-        {children}
-        <Toaster richColors closeButton />
+        <AuthProvider>
+          {children}
+          <Toaster richColors closeButton />
+        </AuthProvider>
       </body>
     </html>
   );
