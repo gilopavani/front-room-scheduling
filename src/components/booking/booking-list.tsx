@@ -1,18 +1,26 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { BookingModel } from "@/models/booking.model";
-import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatInTimeZone } from "date-fns-tz";
 import Image from "next/image";
 import { Button } from "../ui/button";
-import { Check, X } from "lucide-react";
+import { Check, X, ChevronUp, ChevronDown } from "lucide-react";
+import { cancelBookingAction, confirmBookingAction } from "@/actions/booking";
+import { toast } from "sonner";
 
 interface BookingListProps {
   bookings: BookingModel[];
   isLoading?: boolean;
   isAdmin: boolean;
+  onBookingUpdate: (
+    bookingId: string,
+    newStatus: "confirmed" | "cancelled"
+  ) => void;
+  sortBy?: string;
+  sortOrder?: "ASC" | "DESC";
+  onSortChange: (sortBy: string, sortOrder: "ASC" | "DESC") => void;
 }
 
 const statusMap = {
@@ -37,7 +45,79 @@ export function BookingList({
   bookings,
   isLoading = false,
   isAdmin = false,
+  onBookingUpdate,
+  sortBy,
+  sortOrder,
+  onSortChange,
 }: BookingListProps) {
+  const [loadingActions, setLoadingActions] = useState<Record<string, boolean>>(
+    {}
+  );
+
+  const handleDateSortClick = () => {
+    if (sortBy === "date") {
+      const newOrder = sortOrder === "ASC" ? "DESC" : "ASC";
+      onSortChange("date", newOrder);
+    } else {
+      onSortChange("date", "ASC");
+    }
+  };
+
+  const renderSortIcon = () => {
+    if (sortBy !== "date") return null;
+
+    return sortOrder === "ASC" ? (
+      <ChevronUp className="h-4 w-4 ml-1" />
+    ) : (
+      <ChevronDown className="h-4 w-4 ml-1" />
+    );
+  };
+
+  const handleCancelBooking = async (bookingId: string) => {
+    setLoadingActions((prev) => ({ ...prev, [`cancel-${bookingId}`]: true }));
+
+    try {
+      const result = await cancelBookingAction(bookingId);
+
+      if (result.success && result.status) {
+        onBookingUpdate(bookingId, result.status);
+        toast.success("Agendamento cancelado com sucesso!");
+      } else {
+        toast.error(result.error || "Erro ao cancelar agendamento");
+      }
+    } catch (error) {
+      console.error("Erro ao cancelar agendamento:", error);
+      toast.error("Erro inesperado ao cancelar agendamento");
+    } finally {
+      setLoadingActions((prev) => ({
+        ...prev,
+        [`cancel-${bookingId}`]: false,
+      }));
+    }
+  };
+
+  const handleConfirmBooking = async (bookingId: string) => {
+    setLoadingActions((prev) => ({ ...prev, [`confirm-${bookingId}`]: true }));
+
+    try {
+      const result = await confirmBookingAction(bookingId);
+
+      if (result.success && result.status) {
+        onBookingUpdate(bookingId, result.status);
+        toast.success("Agendamento confirmado com sucesso!");
+      } else {
+        toast.error(result.error || "Erro ao confirmar agendamento");
+      }
+    } catch (error) {
+      console.error("Erro ao confirmar agendamento:", error);
+      toast.error("Erro inesperado ao confirmar agendamento");
+    } finally {
+      setLoadingActions((prev) => ({
+        ...prev,
+        [`confirm-${bookingId}`]: false,
+      }));
+    }
+  };
   if (isLoading) {
     return (
       <div className="bg-white rounded-lg shadow-sm border p-6">
@@ -80,7 +160,14 @@ export function BookingList({
           <thead className="bg-white sticky top-0 z-10 border-b border-[#D7D7D7] ">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-black">
-                Data agendamento
+                <button
+                  onClick={handleDateSortClick}
+                  className="flex items-center hover:text-gray-600 transition-colors cursor-pointer"
+                  disabled={isLoading}
+                >
+                  Data agendamento
+                  {renderSortIcon()}
+                </button>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-black">
                 Nome
@@ -148,7 +235,9 @@ export function BookingList({
                       <Button
                         variant="secondary"
                         size="icon"
-                        className="size-8 rounded-full text-white bg-black cursor-pointer hover:bg-black/80"
+                        className="size-8 rounded-full text-white bg-black cursor-pointer hover:bg-black/80 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => handleCancelBooking(booking.id)}
+                        disabled={loadingActions[`cancel-${booking.id}`]}
                       >
                         <X />
                       </Button>
@@ -158,7 +247,9 @@ export function BookingList({
                       <Button
                         variant="secondary"
                         size="icon"
-                        className="size-8 rounded-full text-white bg-black cursor-pointer hover:bg-black/80"
+                        className="size-8 rounded-full text-white bg-black cursor-pointer hover:bg-black/80 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => handleConfirmBooking(booking.id)}
+                        disabled={loadingActions[`confirm-${booking.id}`]}
                       >
                         <Check />
                       </Button>

@@ -35,6 +35,8 @@ export interface BookingFilters {
   date?: string;
   page?: number;
   limit?: number;
+  sortBy?: string;
+  sortOrder?: "ASC" | "DESC";
 }
 
 export const bookingFiltersSchema = z.object({
@@ -42,6 +44,8 @@ export const bookingFiltersSchema = z.object({
   date: z.string().optional(),
   page: z.number().min(1).optional(),
   limit: z.number().min(1).max(100).optional(),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(["ASC", "DESC"]).optional(),
 });
 
 export type BookingFiltersSchema = z.infer<typeof bookingFiltersSchema>;

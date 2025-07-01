@@ -3,13 +3,18 @@
 import { useState, useEffect, useCallback } from "react";
 import { useUserPermissions } from "@/hooks/useUser";
 import { LogoutButton } from "@/components/auth/logout-button";
-import { BookingFilters, BookingList } from "@/components/booking";
+import {
+  BookingFilters,
+  BookingList,
+  NewBookingModal,
+} from "@/components/booking";
 import { BookingSettingsModal } from "@/components/booking/booking-settings-modal";
 import { Pagination } from "@/components/ui/pagination";
-import { getBookingsService } from "@/service/booking";
+import { getBookingsService, getBookingsServiceAdmin } from "@/service/booking";
 import {
   BookingModel,
   BookingFilters as BookingFiltersType,
+  BookingListResponse,
 } from "@/models/booking.model";
 import { toast } from "sonner";
 import Header from "@/components/header";
@@ -20,6 +25,7 @@ export default function BookingPage() {
   const [bookings, setBookings] = useState<BookingModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isNewBookingModalOpen, setIsNewBookingModalOpen] = useState(false);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -30,44 +36,65 @@ export default function BookingPage() {
   const [filters, setFilters] = useState<BookingFiltersType>({
     limit: 10,
     page: 1,
+    sortBy: "date",
+    sortOrder: "DESC",
   });
 
-  const fetchBookings = async (currentFilters: BookingFiltersType) => {
-    try {
-      setIsLoading(true);
-      const response = await getBookingsService(currentFilters);
-      setBookings(response.data);
-      setPagination({
-        currentPage: response.currentPage,
-        totalPages: response.totalPages,
-        totalItems: response.totalItems,
-        hasNextPage: response.hasNextPage,
-        hasPrevPage: response.hasPrevPage,
-      });
-    } catch (error) {
-      console.error("Erro ao buscar agendamentos:", error);
-      toast.error("Erro ao carregar agendamentos", {
-        description: "Tente novamente mais tarde.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const fetchBookings = useCallback(
+    async (currentFilters: BookingFiltersType) => {
+      try {
+        setIsLoading(true);
+        let response: BookingListResponse;
+        if (isAdmin) {
+          response = await getBookingsServiceAdmin(currentFilters);
+        } else {
+          response = await getBookingsService(currentFilters);
+        }
+        setBookings(response.data);
+        setPagination({
+          currentPage: response.currentPage,
+          totalPages: response.totalPages,
+          totalItems: response.totalItems,
+          hasNextPage: response.hasNextPage,
+          hasPrevPage: response.hasPrevPage,
+        });
+      } catch (error) {
+        console.error("Erro ao buscar agendamentos:", error);
+        toast.error("Erro ao carregar agendamentos", {
+          description: "Tente novamente mais tarde.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [isAdmin]
+  );
 
   useEffect(() => {
     fetchBookings(filters);
-  }, [filters]);
+  }, [filters, fetchBookings]);
 
   const handleFiltersChange = useCallback(
     (newFilters: Partial<BookingFiltersType>) => {
-      const updatedFilters = {
-        ...filters,
+      setFilters((prevFilters) => ({
+        ...prevFilters,
         ...newFilters,
         page: 1,
-      };
-      setFilters(updatedFilters);
+      }));
     },
-    [filters]
+    []
+  );
+
+  const handleSortChange = useCallback(
+    (sortBy: string, sortOrder: "ASC" | "DESC") => {
+      setFilters((prevFilters) => ({
+        ...prevFilters,
+        sortBy,
+        sortOrder,
+        page: 1,
+      }));
+    },
+    []
   );
 
   const handlePageChange = (page: number) => {
@@ -77,6 +104,21 @@ export default function BookingPage() {
 
   const handleSettingsSaved = () => {
     fetchBookings(filters);
+  };
+
+  const handleBookingCreated = () => {
+    fetchBookings(filters);
+  };
+
+  const handleBookingUpdate = (
+    bookingId: string,
+    newStatus: "confirmed" | "cancelled"
+  ) => {
+    setBookings((prevBookings) =>
+      prevBookings.map((booking) =>
+        booking.id === bookingId ? { ...booking, status: newStatus } : booking
+      )
+    );
   };
 
   if (!canManageScheduling) {
@@ -112,13 +154,23 @@ export default function BookingPage() {
               isLoading={isLoading}
             />
 
-            <Button
-              type="button"
-              onClick={() => setIsSettingsModalOpen(true)}
-              className="bg-black hover:bg-gray-800 text-white px-6 py-5 rounded flex items-center justify-center gap-2 cursor-pointer text-[16px] font-semibold"
-            >
-              Ajustes de agendamento
-            </Button>
+            {isAdmin ? (
+              <Button
+                type="button"
+                onClick={() => setIsSettingsModalOpen(true)}
+                className="bg-black hover:bg-gray-800 text-white px-6 py-5 rounded flex items-center justify-center gap-2 cursor-pointer text-[16px] font-semibold"
+              >
+                Ajustes de agendamento
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                onClick={() => setIsNewBookingModalOpen(true)}
+                className="bg-black hover:bg-gray-800 text-white px-6 py-5 rounded flex items-center justify-center gap-2 cursor-pointer text-[16px] font-semibold"
+              >
+                Novo Agendamento
+              </Button>
+            )}
           </div>
 
           <div className="space-y-4 flex-1 flex flex-col min-h-0">
@@ -127,6 +179,10 @@ export default function BookingPage() {
                 bookings={bookings}
                 isLoading={isLoading}
                 isAdmin={isAdmin}
+                onBookingUpdate={handleBookingUpdate}
+                sortBy={filters.sortBy}
+                sortOrder={filters.sortOrder}
+                onSortChange={handleSortChange}
               />
             </div>
           </div>
@@ -149,6 +205,13 @@ export default function BookingPage() {
         close={() => setIsSettingsModalOpen(false)}
         onOpenChange={setIsSettingsModalOpen}
         onSettingsSaved={handleSettingsSaved}
+      />
+
+      <NewBookingModal
+        open={isNewBookingModalOpen}
+        close={() => setIsNewBookingModalOpen(false)}
+        onOpenChange={setIsNewBookingModalOpen}
+        onBookingCreated={handleBookingCreated}
       />
     </div>
   );

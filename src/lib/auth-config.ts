@@ -1,14 +1,17 @@
 import { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { adminAuthService } from "@/service/admin-auth";
+import { userAuthService } from "@/service/auth";
 
 export const authConfig: AuthOptions = {
   providers: [
     CredentialsProvider({
-      name: "credentials",
+      id: "admin-credentials",
+      name: "Admin Login",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        userType: { label: "User Type", type: "hidden" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -43,7 +46,53 @@ export const authConfig: AuthOptions = {
           }
           return null;
         } catch (error) {
-          console.error("Authorization error:", error);
+          console.error("Admin authorization error:", error);
+          return null;
+        }
+      },
+    }),
+    CredentialsProvider({
+      id: "user-credentials",
+      name: "User Login",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+        userType: { label: "User Type", type: "hidden" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+
+        try {
+          const response = await userAuthService({
+            email: credentials.email,
+            password: credentials.password,
+          });
+
+          if (response.accessToken && !response.error) {
+            const tokenPayload = JSON.parse(
+              Buffer.from(
+                response.accessToken.split(".")[1],
+                "base64"
+              ).toString()
+            );
+
+            return {
+              id: tokenPayload.userId,
+              email: tokenPayload.email,
+              name: tokenPayload.name || "",
+              lastName: tokenPayload.lastName || "",
+              role: tokenPayload.role,
+              canViewLogs: tokenPayload.canViewLogs || false,
+              canManageScheduling: tokenPayload.canManageScheduling || false,
+              status: tokenPayload.status || "active",
+              accessToken: response.accessToken,
+            };
+          }
+          return null;
+        } catch (error) {
+          console.error("User authorization error:", error);
           return null;
         }
       },

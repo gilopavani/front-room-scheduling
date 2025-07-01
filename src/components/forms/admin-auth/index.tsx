@@ -1,6 +1,5 @@
 "use client";
 import React, { useState } from "react";
-import { signIn } from "next-auth/react";
 import { AuthAdminSchema, authAdminSchema } from "@/models/auth-admin.model";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -9,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff } from "lucide-react";
+import { authHelpers } from "@/lib/auth-helpers";
 
 export default function AdminAuthForm() {
   const router = useRouter();
@@ -27,10 +27,9 @@ export default function AdminAuthForm() {
   const onSubmit = async (data: AuthAdminSchema) => {
     setIsLoading(true);
     try {
-      const result = await signIn("credentials", {
+      const result = await authHelpers.signInAsAdmin({
         email: data.email,
         password: data.password,
-        redirect: false,
       });
 
       if (result?.error) {
