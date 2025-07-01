@@ -57,7 +57,8 @@ export default function Sidebar({ children }: SidebarProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div>Carregando...</div>
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
+        <div className="ml-2 text-gray-600">Carregando...</div>
       </div>
     );
   }
@@ -116,7 +117,7 @@ export default function Sidebar({ children }: SidebarProps) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 h-full bg-white">
+      <div className="flex overflow-y-auto h-full w-full flex-col bg-white">
         {children}
       </div>
     </div>
