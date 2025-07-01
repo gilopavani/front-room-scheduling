@@ -1,39 +1,35 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  registerSchema,
-  RegisterSchema,
-  RegisterModel,
-} from "@/models/register.model";
+  profileSchema,
+  ProfileSchema,
+  UpdateProfileModel,
+} from "@/models/profile.model";
 import { getCepService } from "@/service/cep";
-import { registerService } from "@/service/register";
+import { getProfileService, updateProfileService } from "@/service/profile";
 
-export default function RegisterForm() {
-  const router = useRouter();
+export default function ProfileForm() {
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
   const [cepFound, setCepFound] = useState(false);
-  const [showAddressFields, setShowAddressFields] = useState(false);
 
-  const form = useForm<RegisterSchema>({
-    resolver: zodResolver(registerSchema),
+  const form = useForm<ProfileSchema>({
+    resolver: zodResolver(profileSchema),
     defaultValues: {
       name: "",
       lastName: "",
       email: "",
       password: "",
-      confirmPassword: "",
       cep: "",
       street: "",
       number: "",
@@ -43,9 +39,36 @@ export default function RegisterForm() {
     },
   });
 
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        setLoadingProfile(true);
+        const profileData = await getProfileService();
+        const { userProfile } = profileData;
+
+        form.setValue("name", userProfile.name);
+        form.setValue("lastName", userProfile.lastName);
+        form.setValue("email", userProfile.email);
+        form.setValue("cep", userProfile.address.cep);
+        form.setValue("street", userProfile.address.street);
+        form.setValue("number", userProfile.address.number);
+        form.setValue("neighborhood", userProfile.address.neighborhood);
+        form.setValue("city", userProfile.address.city);
+        form.setValue("state", userProfile.address.state);
+      } catch (error) {
+        console.error("Erro ao carregar perfil:", error);
+        toast.error("Erro ao carregar dados do perfil", {
+          description: "Tente novamente mais tarde.",
+        });
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+
+    loadProfile();
+  }, [form]);
+
   const toggleShowPassword = () => setShowPassword(!showPassword);
-  const toggleShowConfirmPassword = () =>
-    setShowConfirmPassword(!showConfirmPassword);
 
   const handleCepChange = async (cep: string) => {
     const cleanCep = cep.replace(/\D/g, "");
@@ -61,12 +84,10 @@ export default function RegisterForm() {
           form.setValue("city", cepData.localidade || "");
           form.setValue("state", cepData.uf || "");
 
-          // Só marca como encontrado se pelo menos o logradouro vier preenchido
           const hasValidData = !!(
             cepData.logradouro && cepData.logradouro.trim() !== ""
           );
           setCepFound(hasValidData);
-          setShowAddressFields(true);
 
           if (hasValidData) {
             toast.success("CEP encontrado!");
@@ -76,7 +97,6 @@ export default function RegisterForm() {
         }
       } catch {
         setCepFound(false);
-        setShowAddressFields(true);
         form.setValue("street", "");
         form.setValue("neighborhood", "");
         form.setValue("city", "");
@@ -87,23 +107,18 @@ export default function RegisterForm() {
       }
     } else {
       setCepFound(false);
-      setShowAddressFields(false);
     }
   };
 
-  const onSubmit = async (data: RegisterSchema) => {
+  const onSubmit = async (data: ProfileSchema) => {
     setIsLoading(true);
 
     try {
-      const registerData: RegisterModel = {
+      const updateData: UpdateProfileModel = {
         user: {
           name: data.name,
           lastName: data.lastName,
           email: data.email,
-          role: "user",
-          status: "active",
-          canViewLogs: true,
-          canManageScheduling: true,
         },
         address: {
           cep: data.cep.replace(/\D/g, ""),
@@ -113,13 +128,14 @@ export default function RegisterForm() {
           city: data.city,
           state: data.state,
         },
-        password: data.password,
-        confirmPassword: data.confirmPassword,
       };
 
-      await registerService(registerData);
-      toast.success("Cadastro realizado com sucesso!");
-      router.push("/");
+      if (data.password && data.password.trim() !== "") {
+        updateData.password = data.password;
+      }
+
+      await updateProfileService(updateData);
+      toast.success("Perfil atualizado com sucesso!");
     } catch (error: unknown) {
       const errorMessage =
         error && typeof error === "object" && "response" in error
@@ -127,7 +143,7 @@ export default function RegisterForm() {
               ?.data?.error || "Tente novamente mais tarde."
           : "Tente novamente mais tarde.";
 
-      toast.error("Erro ao realizar cadastro", {
+      toast.error("Erro ao atualizar perfil", {
         description: errorMessage,
       });
     } finally {
@@ -142,6 +158,17 @@ export default function RegisterForm() {
     }
     return `${cleanCep.slice(0, 5)}-${cleanCep.slice(5, 8)}`;
   };
+
+  if (loadingProfile) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="flex items-center gap-2">
+          <span className="w-6 h-6 border-2 border-t-2 border-t-black border-gray-300 rounded-full animate-spin"></span>
+          <span>Carregando perfil...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form
@@ -222,14 +249,14 @@ export default function RegisterForm() {
             htmlFor="password"
             className="text-[14px] flex text-end gap-1 font-medium text-black"
           >
-            <div className="flex items-end">Senha de acesso</div>
-            <p className="text-[12px] font-normal">(Obrigatório)</p>
+            <div className="flex items-end">Nova senha</div>
+            <p className="text-[12px] font-normal">(Opcional)</p>
           </label>
           <div className="relative">
             <Input
               type={showPassword ? "text" : "password"}
               id="password"
-              placeholder="Senha de acesso"
+              placeholder="Deixe em branco para não alterar"
               {...form.register("password")}
               className="p-2 border rounded pr-10"
             />
@@ -248,41 +275,6 @@ export default function RegisterForm() {
           {form.formState.errors.password && (
             <p className="text-red-500 text-sm">
               {form.formState.errors.password.message}
-            </p>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label
-            htmlFor="confirmPassword"
-            className="text-[14px] flex text-end gap-1 font-medium text-black"
-          >
-            <div className="flex items-end">Confirmar senha</div>
-            <p className="text-[12px] font-normal">(Obrigatório)</p>
-          </label>
-          <div className="relative">
-            <Input
-              type={showConfirmPassword ? "text" : "password"}
-              id="confirmPassword"
-              placeholder="Confirmar senha"
-              {...form.register("confirmPassword")}
-              className="p-2 border rounded pr-10"
-            />
-            <button
-              type="button"
-              onClick={toggleShowConfirmPassword}
-              className="absolute cursor-pointer right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
-            >
-              {!showConfirmPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-            </button>
-          </div>
-          {form.formState.errors.confirmPassword && (
-            <p className="text-red-500 text-sm">
-              {form.formState.errors.confirmPassword.message}
             </p>
           )}
         </div>
@@ -319,124 +311,122 @@ export default function RegisterForm() {
           )}
         </div>
 
-        {showAddressFields && (
-          <>
-            <div className="flex flex-col gap-2">
-              <label
-                htmlFor="street"
-                className="text-[14px] flex text-end gap-1 font-medium text-black"
-              >
-                <div className="flex items-end">Endereço</div>
-                <p className="text-[12px] font-normal">(Obrigatório)</p>
-              </label>
-              <Input
-                type="text"
-                id="street"
-                placeholder="Endereço"
-                {...form.register("street")}
-                className="p-2 border rounded"
-                disabled={cepFound}
-              />
-              {form.formState.errors.street && (
-                <p className="text-red-500 text-sm">
-                  {form.formState.errors.street.message}
-                </p>
-              )}
-            </div>
+        <>
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor="street"
+              className="text-[14px] flex text-end gap-1 font-medium text-black"
+            >
+              <div className="flex items-end">Endereço</div>
+              <p className="text-[12px] font-normal">(Obrigatório)</p>
+            </label>
+            <Input
+              type="text"
+              id="street"
+              placeholder="Endereço"
+              {...form.register("street")}
+              className="p-2 border rounded"
+              disabled={cepFound}
+            />
+            {form.formState.errors.street && (
+              <p className="text-red-500 text-sm">
+                {form.formState.errors.street.message}
+              </p>
+            )}
+          </div>
 
-            <div className="flex flex-col gap-2">
-              <label
-                htmlFor="number"
-                className="text-[14px] flex text-end gap-1 font-medium text-black"
-              >
-                <div className="flex items-end">Número</div>
-                <p className="text-[12px] font-normal">(Obrigatório)</p>
-              </label>
-              <Input
-                type="text"
-                id="number"
-                placeholder="Número"
-                {...form.register("number")}
-                className="p-2 border rounded"
-              />
-              {form.formState.errors.number && (
-                <p className="text-red-500 text-sm">
-                  {form.formState.errors.number.message}
-                </p>
-              )}
-            </div>
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor="number"
+              className="text-[14px] flex text-end gap-1 font-medium text-black"
+            >
+              <div className="flex items-end">Número</div>
+              <p className="text-[12px] font-normal">(Obrigatório)</p>
+            </label>
+            <Input
+              type="text"
+              id="number"
+              placeholder="Número"
+              {...form.register("number")}
+              className="p-2 border rounded"
+            />
+            {form.formState.errors.number && (
+              <p className="text-red-500 text-sm">
+                {form.formState.errors.number.message}
+              </p>
+            )}{" "}
+          </div>
 
-            <div className="flex flex-col gap-2">
-              <label
-                htmlFor="neighborhood"
-                className="text-[14px] flex text-end gap-1 font-medium text-black"
-              >
-                <div className="flex items-end">Bairro</div>
-                <p className="text-[12px] font-normal">(Obrigatório)</p>
-              </label>
-              <Input
-                type="text"
-                id="neighborhood"
-                placeholder="Bairro"
-                {...form.register("neighborhood")}
-                className="p-2 border rounded"
-                disabled={cepFound}
-              />
-              {form.formState.errors.neighborhood && (
-                <p className="text-red-500 text-sm">
-                  {form.formState.errors.neighborhood.message}
-                </p>
-              )}
-            </div>
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor="neighborhood"
+              className="text-[14px] flex text-end gap-1 font-medium text-black"
+            >
+              <div className="flex items-end">Bairro</div>
+              <p className="text-[12px] font-normal">(Obrigatório)</p>
+            </label>
+            <Input
+              type="text"
+              id="neighborhood"
+              placeholder="Bairro"
+              {...form.register("neighborhood")}
+              className="p-2 border rounded"
+              disabled={cepFound}
+            />
+            {form.formState.errors.neighborhood && (
+              <p className="text-red-500 text-sm">
+                {form.formState.errors.neighborhood.message}
+              </p>
+            )}
+          </div>
 
-            <div className="flex flex-col gap-2">
-              <label
-                htmlFor="city"
-                className="text-[14px] flex text-end gap-1 font-medium text-black"
-              >
-                <div className="flex items-end">Cidade</div>
-                <p className="text-[12px] font-normal">(Obrigatório)</p>
-              </label>
-              <Input
-                type="text"
-                id="city"
-                placeholder="Cidade"
-                {...form.register("city")}
-                className="p-2 border rounded"
-                disabled={cepFound}
-              />
-              {form.formState.errors.city && (
-                <p className="text-red-500 text-sm">
-                  {form.formState.errors.city.message}
-                </p>
-              )}
-            </div>
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor="city"
+              className="text-[14px] flex text-end gap-1 font-medium text-black"
+            >
+              <div className="flex items-end">Cidade</div>
+              <p className="text-[12px] font-normal">(Obrigatório)</p>
+            </label>
+            <Input
+              type="text"
+              id="city"
+              placeholder="Cidade"
+              {...form.register("city")}
+              className="p-2 border rounded"
+              disabled={cepFound}
+            />
+            {form.formState.errors.city && (
+              <p className="text-red-500 text-sm">
+                {form.formState.errors.city.message}
+              </p>
+            )}
+          </div>
 
-            <div className="flex flex-col gap-2">
-              <label
-                htmlFor="state"
-                className="text-[14px] flex text-end gap-1 font-medium text-black"
-              >
-                <div className="flex items-end">Estado</div>
-                <p className="text-[12px] font-normal">(Obrigatório)</p>
-              </label>
-              <Input
-                type="text"
-                id="state"
-                placeholder="Estado"
-                {...form.register("state")}
-                className="p-2 border rounded"
-                disabled={cepFound}
-                maxLength={2}
-              />
-              {form.formState.errors.state && (
-                <p className="text-red-500 text-sm">
-                  {form.formState.errors.state.message}
-                </p>
-              )}
-            </div>
-          </>
-        )}
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor="state"
+              className="text-[14px] flex text-end gap-1 font-medium text-black"
+            >
+              <div className="flex items-end">Estado</div>
+              <p className="text-[12px] font-normal">(Obrigatório)</p>
+            </label>
+            <Input
+              type="text"
+              id="state"
+              placeholder="Estado"
+              {...form.register("state")}
+              className="p-2 border rounded"
+              disabled={cepFound}
+              maxLength={2}
+            />
+            {form.formState.errors.state && (
+              <p className="text-red-500 text-sm">
+                {form.formState.errors.state.message}
+              </p>
+            )}
+          </div>
+        </>
       </div>
 
       <Button
@@ -447,19 +437,8 @@ export default function RegisterForm() {
         {isLoading && (
           <span className="w-4 h-4 border-2 border-t-2 border-t-white border-blue-500 rounded-full animate-spin"></span>
         )}
-        Cadastrar-se
+        Atualizar Perfil
       </Button>
-
-      <div className="flex items-center justify-between mr-10">
-        <p className="text-[14px]">Já tem uma conta?</p>
-        <Button
-          variant="link"
-          className="text-black text-[14px] font-bold underline hover:text-black/80"
-          onClick={() => router.push("/")}
-        >
-          Faça login
-        </Button>
-      </div>
     </form>
   );
 }

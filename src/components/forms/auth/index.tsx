@@ -49,9 +49,9 @@ export default function AuthForm() {
         await new Promise((resolve) => setTimeout(resolve, 300));
         setShowPasswordField(true);
       }
-    } catch (error: any) {
+    } catch {
       toast.error("Erro ao verificar email", {
-        description: error.message || "Tente novamente mais tarde.",
+        description: "Tente novamente mais tarde.",
       });
     } finally {
       setIsLoading(false);

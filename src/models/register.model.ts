@@ -42,7 +42,6 @@ export const registerSchema = z
     cep: z.string().min(8, "CEP deve ter 8 dígitos").max(9, "CEP inválido"),
     street: z.string().min(1, "Endereço é obrigatório"),
     number: z.string().min(1, "Número é obrigatório"),
-    complement: z.string().optional(),
     neighborhood: z.string().min(1, "Bairro é obrigatório"),
     city: z.string().min(1, "Cidade é obrigatória"),
     state: z

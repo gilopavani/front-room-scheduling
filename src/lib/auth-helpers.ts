@@ -12,8 +12,8 @@ export const authHelpers = {
     try {
       const response = await api.post("/auth/check-mail", { email });
       return response.data;
-    } catch (error: any) {
-      throw error.response?.data || { message: "Erro interno", exists: false };
+    } catch {
+      throw { message: "Erro interno", exists: false };
     }
   },
 

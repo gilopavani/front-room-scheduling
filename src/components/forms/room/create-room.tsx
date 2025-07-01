@@ -1,5 +1,5 @@
 import { createRoomSchema, CreateRoomSchema } from "@/models/room.model";
-import React, { useState } from "react";
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -9,7 +9,7 @@ import { useTimeRange } from "@/hooks/useTimeRange";
 import { TimeRangeSelector } from "./time-range-selector";
 import { TimeBlockSelector } from "./time-block-selector";
 import { createRoomService } from "@/service/room";
-import { Edit, Plus } from "lucide-react";
+import { Edit } from "lucide-react";
 
 interface Props {
   setIsCreating?: (isCreating: boolean) => void;

@@ -114,6 +114,10 @@ export default function BookingPage() {
     bookingId: string,
     newStatus: "confirmed" | "cancelled"
   ) => {
+    if (newStatus === "confirmed") {
+      fetchBookings(filters);
+      return;
+    }
     setBookings((prevBookings) =>
       prevBookings.map((booking) =>
         booking.id === bookingId ? { ...booking, status: newStatus } : booking

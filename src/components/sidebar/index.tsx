@@ -2,10 +2,24 @@
 
 import { UserModel } from "@/models/user.model";
 import { useUser } from "@/hooks/useUser";
-import { Wind, CalendarDays, ListChecks, User, Users } from "lucide-react";
+import {
+  Wind,
+  CalendarDays,
+  ListChecks,
+  User,
+  Users,
+  ChevronDown,
+} from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { ReactNode } from "react";
 import { LogoutButton } from "@/components/auth/logout-button";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface SidebarProps {
   children: ReactNode;
@@ -44,8 +58,8 @@ export default function Sidebar({ children }: SidebarProps) {
         visible: user?.role === "admin" || user?.canViewLogs === true,
       },
       {
-        label: "Minha Conta",
-        href: "/my-account",
+        label: "Minha conta",
+        href: "/profile",
         icon: <User size={20} />,
         visible: user?.role === "user",
       },
@@ -104,17 +118,27 @@ export default function Sidebar({ children }: SidebarProps) {
           </ul>
         </div>
 
-        {/* User info and logout at bottom */}
-        <div className="border-t border-[#D7D7D7] p-4">
-          <div className="mb-3">
-            <p className="text-sm font-medium">
-              {user.name} {user.lastName}
-            </p>
-            <p className="text-xs text-gray-500">{user.email}</p>
-            <p className="text-xs text-blue-600 capitalize">{user.role}</p>
-          </div>
-          <LogoutButton className="w-full text-sm" />
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <div className="border-t border-[#D7D7D7] py-2 px-4 flex justify-between items-center cursor-pointer">
+              <div className="mb-3 flex flex-col items-start">
+                <p className="text-sm font-medium">
+                  {user.name} {user.lastName}
+                </p>
+                <p className="text-xs">
+                  {user.role === "admin" ? "Administrador" : "Cliente"}
+                </p>
+              </div>
+
+              <ChevronDown size={20} className="text-gray-500" />
+            </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-48">
+            <DropdownMenuItem>
+              <LogoutButton className="w-full text-sm" />
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="flex overflow-y-auto h-full w-full flex-col bg-white">
