@@ -140,13 +140,14 @@ export function UserList({
   ) => {
     const hasPermission = user[permissionType];
     const isUserLoading = loadingUsers.has(user.id);
+    const isAdminUser = user.role === "admin";
 
     return (
       <button
         onClick={() =>
           handlePermissionChange(user.id, permissionType, !hasPermission)
         }
-        disabled={isUserLoading || isPending}
+        disabled={isUserLoading || isPending || isAdminUser}
         className={`inline-flex px-2 py-1.5 text-xs font-semibold rounded-full border transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
           hasPermission
             ? "bg-black text-white border-black hover:bg-gray-800"
@@ -228,6 +229,7 @@ export function UserList({
             {users.map((user) => {
               const userRole = roleMap[user.role || "user"];
               const isUserLoading = loadingUsers.has(user.id);
+              const isAdminUser = user.role === "admin";
 
               return (
                 <tr key={user.id} className="bg-white">
@@ -281,7 +283,7 @@ export function UserList({
                     <div className="flex items-center gap-2">
                       <Switch
                         checked={user.status === "active"}
-                        disabled={isUserLoading || isPending}
+                        disabled={isUserLoading || isPending || isAdminUser}
                         onCheckedChange={(checked) =>
                           handleStatusChange(
                             user.id,
