@@ -1,12 +1,7 @@
 "use server";
-import {
-  CreateRoomSchema,
-  NewRoomResponse,
-  RoomSchema,
-  roomSchema,
-} from "@/models/room.model";
+import { CreateRoomSchema, NewRoomResponse } from "@/models/room.model";
 
-import { createRoomService, editRoomService } from "@/service/room";
+import { createRoomService } from "@/service/room";
 
 export async function createRoomAction(
   data: CreateRoomSchema

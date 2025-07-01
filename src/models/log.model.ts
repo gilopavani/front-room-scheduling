@@ -2,37 +2,37 @@ import { z } from "zod";
 
 export interface LogModel {
   id: string;
-  action: string;
-  entity: string;
-  entityId?: string;
   userId: string;
-  userEmail: string;
-  ipAddress?: string;
-  userAgent?: string;
-  details?: Record<string, unknown>;
+  module: string;
+  activity: string;
+  details: string;
+  ipAddress?: string | null;
+  userAgent?: string | null;
   createdAt: string;
+  updatedAt: string;
+  user: {
+    name: string;
+    lastName: string;
+    email: string;
+  };
 }
 
 export interface LogFilters {
   search?: string;
-  action?: string;
-  entity?: string;
-  userId?: string;
-  startDate?: string;
-  endDate?: string;
+  date?: string;
   page?: number;
   limit?: number;
+  sortBy?: string;
+  sortOrder?: "ASC" | "DESC";
 }
 
 export const logFiltersSchema = z.object({
   search: z.string().optional(),
-  action: z.string().optional(),
-  entity: z.string().optional(),
-  userId: z.string().optional(),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
+  date: z.string().optional(),
   page: z.number().min(1).optional(),
   limit: z.number().min(1).max(100).optional(),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(["ASC", "DESC"]).optional(),
 });
 
 export interface LogListResponse {

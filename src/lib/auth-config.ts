@@ -138,7 +138,7 @@ export const authConfig: AuthOptions = {
     },
   },
   pages: {
-    signIn: "/admin-auth",
+    signIn: "/",
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

@@ -11,7 +11,7 @@ interface LogoutButtonProps {
 export function LogoutButton({ children, className }: LogoutButtonProps) {
   const handleLogout = async () => {
     await signOut({
-      callbackUrl: "/admin-auth",
+      callbackUrl: "/",
     });
   };
 

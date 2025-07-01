@@ -1,7 +1,5 @@
 import AuthForm from "@/components/forms/auth";
 import UnauthenticatedHeader from "@/components/unauthenticated-header";
-import { Wind } from "lucide-react";
-import Image from "next/image";
 
 export default function Home() {
   return (

@@ -20,7 +20,6 @@ interface BookingSettingsModalProps {
 export function BookingSettingsModal({
   open,
   onOpenChange,
-  onSettingsSaved,
   close,
 }: BookingSettingsModalProps) {
   const [isCreating, setIsCreating] = useState(false);
