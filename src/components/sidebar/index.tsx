@@ -40,7 +40,7 @@ export default function Sidebar({ children }: SidebarProps) {
   const buildMenuItems = (user: UserModel): MenuItem[] => {
     const baseItems = [
       {
-        label: "Booking",
+        label: "Agendamentos",
         href: "/booking",
         icon: <CalendarDays size={20} />,
         visible: user?.role === "admin" || user?.canManageScheduling === true,
