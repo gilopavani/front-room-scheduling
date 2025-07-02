@@ -2,8 +2,10 @@
 import { Wind } from "lucide-react";
 import React from "react";
 import { Button } from "../ui/button";
+import { useRouter } from "next/navigation";
 
 export default function UnauthenticatedHeader() {
+  const router = useRouter();
   return (
     <div className="flex w-full h-24 items-center justify-between px-8 border-b border-[#D7D7D7] ">
       <Wind size={40} />
@@ -11,6 +13,7 @@ export default function UnauthenticatedHeader() {
       <Button
         type="button"
         className="#000000 text-white p-4 rounded flex items-center justify-center gap-2 cursor-pointer text-[16px] font-semibold"
+        onClick={() => router.push("/register")}
         //   disabled={isLoading}
       >
         {/* {isLoading && (
