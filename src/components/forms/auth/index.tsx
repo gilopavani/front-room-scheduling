@@ -48,11 +48,23 @@ export default function AuthForm() {
         authForm.setValue("email", data.email);
         await new Promise((resolve) => setTimeout(resolve, 300));
         setShowPasswordField(true);
+      } else {
+        toast.info("Email não encontrado. Redirecionando para o cadastro...");
+        setTimeout(() => {
+          router.push(`/register?email=${encodeURIComponent(data.email)}`);
+        }, 1500);
       }
-    } catch {
-      toast.error("Erro ao verificar email", {
-        description: "Tente novamente mais tarde.",
-      });
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'message' in error && error.message === "Erro interno") {
+        toast.error("Erro ao verificar email", {
+          description: "Tente novamente mais tarde.",
+        });
+      } else {
+        toast.info("Email não encontrado. Redirecionando para o cadastro...");
+        setTimeout(() => {
+          router.push(`/register?email=${encodeURIComponent(data.email)}`);
+        }, 1500);
+      }
     } finally {
       setIsLoading(false);
     }

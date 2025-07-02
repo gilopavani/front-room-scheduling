@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,9 @@ import { authHelpers } from "@/lib/auth-helpers";
 
 export default function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const emailFromParams = searchParams.get('email');
+  
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,7 +35,7 @@ export default function RegisterForm() {
     defaultValues: {
       name: "",
       lastName: "",
-      email: "",
+      email: emailFromParams || "",
       password: "",
       confirmPassword: "",
       cep: "",
@@ -43,6 +46,13 @@ export default function RegisterForm() {
       state: "",
     },
   });
+
+  useEffect(() => {
+    if (emailFromParams) {
+      form.setValue("email", emailFromParams);
+      toast.info("Email preenchido automaticamente!");
+    }
+  }, [emailFromParams, form]);
 
   const toggleShowPassword = () => setShowPassword(!showPassword);
   const toggleShowConfirmPassword = () =>
@@ -62,7 +72,6 @@ export default function RegisterForm() {
           form.setValue("city", cepData.localidade || "");
           form.setValue("state", cepData.uf || "");
 
-          // Só marca como encontrado se pelo menos o logradouro vier preenchido
           const hasValidData = !!(
             cepData.logradouro && cepData.logradouro.trim() !== ""
           );
