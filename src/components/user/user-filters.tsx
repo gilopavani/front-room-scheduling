@@ -95,7 +95,6 @@ export function UserFilters({
       search: debouncedSearch || undefined,
       date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : undefined,
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, selectedDate]);
 
   const handleSearchChange = (value: string) => {
