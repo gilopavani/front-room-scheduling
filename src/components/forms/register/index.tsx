@@ -16,6 +16,7 @@ import {
 } from "@/models/register.model";
 import { getCepService } from "@/service/cep";
 import { registerService } from "@/service/register";
+import { authHelpers } from "@/lib/auth-helpers";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -119,7 +120,19 @@ export default function RegisterForm() {
 
       await registerService(registerData);
       toast.success("Cadastro realizado com sucesso!");
-      router.push("/");
+
+      const signInResult = await authHelpers.signInAfterRegister(
+        data.email,
+        data.password
+      );
+
+      if (signInResult?.ok) {
+        toast.success("Login realizado automaticamente!");
+        router.push("/booking");
+      } else {
+        toast.info("Cadastro realizado! Faça login para continuar.");
+        router.push("/");
+      }
     } catch (error: unknown) {
       const errorMessage =
         error && typeof error === "object" && "response" in error

@@ -38,4 +38,16 @@ export const authHelpers = {
       redirect: false,
     });
   },
+
+  async signInAfterRegister(
+    email: string,
+    password: string
+  ): Promise<SignInResponse | undefined> {
+    return await signIn("user-credentials", {
+      email,
+      password,
+      userType: "user",
+      redirect: false,
+    });
+  },
 };
