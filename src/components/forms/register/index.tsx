@@ -21,8 +21,8 @@ import { authHelpers } from "@/lib/auth-helpers";
 export default function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const emailFromParams = searchParams.get('email');
-  
+  const emailFromParams = searchParams.get("email");
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

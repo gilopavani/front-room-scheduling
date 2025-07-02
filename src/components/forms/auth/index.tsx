@@ -55,7 +55,12 @@ export default function AuthForm() {
         }, 1500);
       }
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'message' in error && error.message === "Erro interno") {
+      if (
+        error &&
+        typeof error === "object" &&
+        "message" in error &&
+        error.message === "Erro interno"
+      ) {
         toast.error("Erro ao verificar email", {
           description: "Tente novamente mais tarde.",
         });

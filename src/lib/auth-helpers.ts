@@ -13,8 +13,10 @@ export const authHelpers = {
       const response = await api.post("/auth/check-mail", { email });
       return response.data;
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { data?: { error?: string } } };
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as {
+          response?: { data?: { error?: string } };
+        };
         if (axiosError?.response?.data?.error === "User not found") {
           return { message: "User not found", exists: false };
         }
