@@ -101,10 +101,24 @@ export function EditRoom({ setIsCreating, close }: Props) {
 
   if (rooms.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex flex-col items-center justify-center h-full">
         <p className="text-gray-500">
           Nenhuma sala encontrada. Por favor, crie uma sala.
         </p>
+
+        <Button
+          onClick={() => {
+            if (setIsCreating) {
+              setIsCreating(true);
+            }
+          }}
+          type="button"
+          variant="ghost"
+          className="mt-10 w-full mb-4 flex items-center justify-start font-medium text-[16px]"
+        >
+          <Plus size={22} className="mr-2" />
+          <div>Adicionar nova sala</div>
+        </Button>
       </div>
     );
   }
